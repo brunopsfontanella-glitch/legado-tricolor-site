@@ -1,0 +1,22 @@
+{
+  "name": "Legado Tricolor",
+  "short_name": "Legado",
+  "description": "Plataforma do Legado Tricolor: Sede, Instituto e Movimento em um só acesso.",
+  "id": "./app/",
+  "start_url": "./app/",
+  "scope": "./app",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "pt-BR",
+  "background_color": "#ffffff",
+  "theme_color": "#00264d",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Reservar jogo", "url": "./app/sede/reservar/", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Grêmio em Dia", "url": "./app/gremio/", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
