@@ -1,7 +1,16 @@
 // Service worker do app Legado Tricolor (protótipo).
 // Estratégia: telas do app com rede primeiro e cópia em cache como reserva;
 // arquivos estáticos (JS, CSS, ícones, imagens) com cache e atualização em segundo plano.
-const CACHE = "legado-app-v2";
+// A troca do nome apaga os caches das versões anteriores (inclusive qualquer resposta de erro que tenha ficado guardada).
+const CACHE = "legado-app-v3";
+
+// Só entram no cache respostas completas e bem-sucedidas. Um erro (404, 503) nunca pode ficar guardado,
+// senão a tela deixa de abrir mesmo depois de o servidor voltar ao normal.
+function guardar(cache, request, response) {
+  if (response.status === 200 && response.type === "basic" && !response.redirected) {
+    cache.put(request, response.clone());
+  }
+}
 
 // Prefixo do site: "" na raiz ou "/nome-do-repositório" no GitHub Pages (deduzido do endereço deste arquivo).
 const BASE = new URL("./", self.location).pathname.replace(/\/$/, "");
@@ -34,10 +43,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (response.ok && !response.redirected) {
-            const copy = response.clone();
-            caches.open(CACHE).then((cache) => cache.put(request, copy));
-          }
+          caches.open(CACHE).then((cache) => guardar(cache, request, response));
           return response;
         })
         .catch(() => caches.match(request).then((hit) => hit || caches.match(`${BASE}/app/`))),
@@ -47,15 +53,22 @@ self.addEventListener("fetch", (event) => {
 
   if (STATIC_RE.test(url.pathname)) {
     event.respondWith(
-      caches.open(CACHE).then((cache) =>
-        cache.match(request).then((hit) => {
-          const network = fetch(request).then((response) => {
-            cache.put(request, response.clone());
-            return response;
-          });
-          return hit || network;
-        }),
-      ),
+      caches.open(CACHE).then(async (cache) => {
+        const guardado = await cache.match(request);
+        const hit = guardado && guardado.status === 200 ? guardado : undefined;
+        // Arquivos de _next/static trazem o conteúdo no nome (hash): se já existe, serve direto.
+        if (hit && url.pathname.includes("/_next/static/")) return hit;
+        const network = fetch(request).then((response) => {
+          guardar(cache, request, response);
+          return response;
+        });
+        if (hit) {
+          // Ícones e imagens: serve o guardado e atualiza ao fundo.
+          network.catch(() => {});
+          return hit;
+        }
+        return network;
+      }),
     );
   }
 });
